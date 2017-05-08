@@ -41,8 +41,45 @@ private extension UILabel {
         if showsDecimal {
             self.text = String(format: "%.\(decimalPlaces)f", value) + "\(valueIndicator)"
         } else {
-            self.text = "\(Int(value))\(valueIndicator)"
+
+            let boldAttributes: [String : Any] = [
+                NSForegroundColorAttributeName: UIColor.black,
+                NSFontAttributeName : UIFont.boldSystemFont(ofSize: 20) ]
+            let normalAttributes: [String : Any] = [
+                NSForegroundColorAttributeName: UIColor.blue,
+                NSFontAttributeName : UIFont.boldSystemFont(ofSize: 13) ]
+
+            let boldText  = ""
+            let normalText = "\n \(Int(value))\(valueIndicator)"
+
+            let boldString = NSMutableAttributedString(string:boldText, attributes:boldAttributes)
+            let normalString = NSMutableAttributedString(string:normalText, attributes:normalAttributes)
+
+            boldString.append(normalString)
+            self.attributedText = boldString
+
         }
+        self.sizeToFit()
+    }
+
+    func update(withValue value: CGFloat, tokenGenerated:String, valueIndicator: String, showsDecimal: Bool, decimalPlaces: Int) {
+
+        let boldAttributes: [String : Any] = [
+            NSForegroundColorAttributeName: UIColor.black,
+            NSFontAttributeName : UIFont.boldSystemFont(ofSize: 20) ]
+        let normalAttributes: [String : Any] = [
+            NSForegroundColorAttributeName: UIColor.blue,
+            NSFontAttributeName : UIFont.boldSystemFont(ofSize: 13) ]
+
+        let boldText  = tokenGenerated
+        let normalText = "\n \(Int(value))\(valueIndicator)"
+
+        let boldString = NSMutableAttributedString(string:boldText, attributes:boldAttributes)
+        let normalString = NSMutableAttributedString(string:normalText, attributes:normalAttributes)
+
+        boldString.append(normalString)
+        self.attributedText = boldString
+
         self.sizeToFit()
     }
 }
@@ -52,53 +89,54 @@ private extension UILabel {
  This is the class that handles all the drawing and animation.
  This class is not interacted with, instead properties are set in UICircularProgressRingView
  and those are delegated to here.
- 
+
  */
 class UICircularProgressRingLayer: CAShapeLayer {
-    
+
     // MARK: Properties
-    
+
     /**
      The NSManaged properties for the layer.
      These properties are initialized in UICircularProgressRingView.
      They're also assigned by mutating UICircularProgressRingView.
      */
     @NSManaged var fullCircle: Bool
-    
+
     @NSManaged var value: CGFloat
     @NSManaged var maxValue: CGFloat
-    
+    @NSManaged var token: String?
+
     @NSManaged var viewStyle: Int
     @NSManaged var patternForDashes: [CGFloat]
-    
+
     @NSManaged var startAngle: CGFloat
     @NSManaged var endAngle: CGFloat
-    
+
     @NSManaged var outerRingWidth: CGFloat
     @NSManaged var outerRingColor: UIColor
     @NSManaged var outerCapStyle: CGLineCap
-    
+
     @NSManaged var innerRingWidth: CGFloat
     @NSManaged var innerRingColor: UIColor
     @NSManaged var innerCapStyle: CGLineCap
     @NSManaged var innerRingSpacing: CGFloat
-    
+
     @NSManaged var shouldShowValueText: Bool
     @NSManaged var fontColor: UIColor
     @NSManaged var font: UIFont
     @NSManaged var valueIndicator: String
     @NSManaged var showFloatingPoint: Bool
     @NSManaged var decimalPlaces: Int
-    
+
     var animationDuration: TimeInterval = 1.0
     var animationStyle: String = kCAMediaTimingFunctionEaseInEaseOut
     var animated = false
-    
+
     // The value label which draws the text for the current value
-    lazy private var valueLabel: UILabel = UILabel(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
-    
+    lazy var valueLabel: UILabel = UILabel(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
+
     // MARK: Draw
-    
+
     /**
      Overriden for custom drawing.
      Draws the outer ring, inner ring and value label.
@@ -111,11 +149,12 @@ class UICircularProgressRingLayer: CAShapeLayer {
         drawInnerRing()
         // Draw the label
         drawValueLabel()
+
         UIGraphicsPopContext()
     }
-    
+
     // MARK: Animation methods
-    
+
     /**
      Watches for changes in the value property, and setNeedsDisplay accordingly
      */
@@ -123,10 +162,10 @@ class UICircularProgressRingLayer: CAShapeLayer {
         if key == "value" {
             return true
         }
-        
+
         return super.needsDisplay(forKey: key)
     }
-    
+
     /**
      Creates animation when value property is changed
      */
@@ -138,36 +177,36 @@ class UICircularProgressRingLayer: CAShapeLayer {
             animation.duration = animationDuration
             return animation
         }
-        
+
         return super.action(forKey: event)
     }
-    
-    
+
+
     // MARK: Helpers
-    
+
     /**
      Draws the outer ring for the view.
      Sets path properties according to how the user has decided to customize the view.
      */
     private func drawOuterRing() {
         guard outerRingWidth > 0 else { return }
-        
+
         let width = bounds.width
         let height = bounds.width
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
         let outerRadius = max(width, height)/2 - outerRingWidth/2
         let start = fullCircle ? 0 : startAngle.toRads
         let end = fullCircle ? CGFloat.pi*2 : endAngle.toRads
-        
+
         let outerPath = UIBezierPath(arcCenter: center,
                                      radius: outerRadius,
                                      startAngle: start,
                                      endAngle: end,
                                      clockwise: true)
-        
+
         outerPath.lineWidth = outerRingWidth
         outerPath.lineCapStyle = outerCapStyle
-        
+
         // If the style is 3 or 4, make sure to draw either dashes or dotted path
         if viewStyle == 3 {
             outerPath.setLineDash(patternForDashes, count: patternForDashes.count, phase: 0.0)
@@ -175,22 +214,22 @@ class UICircularProgressRingLayer: CAShapeLayer {
             outerPath.setLineDash([0, outerPath.lineWidth * 2], count: 2, phase: 0)
             outerPath.lineCapStyle = .round
         }
-        
+
         outerRingColor.setStroke()
         outerPath.stroke()
     }
-    
+
     /**
      Draws the inner ring for the view.
      Sets path properties according to how the user has decided to customize the view.
      */
     private func drawInnerRing() {
         guard innerRingWidth > 0 else { return }
-        
+
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
-        
+
         var innerEndAngle: CGFloat = 0.0
-        
+
         if fullCircle {
             innerEndAngle = (360.0 / CGFloat(maxValue)) * CGFloat(value) + startAngle
         } else {
@@ -201,11 +240,11 @@ class UICircularProgressRingLayer: CAShapeLayer {
             // The inner end angle some basic math is done
             innerEndAngle = arcLenPerValue * CGFloat(value) + startAngle
         }
-        
+
         // The radius for style 1 is set below
         // The radius for style 1 is a bit less than the outer, this way it looks like its inside the circle
         var radiusIn = (max(bounds.width - outerRingWidth*2 - innerRingSpacing, bounds.height - outerRingWidth*2 - innerRingSpacing)/2) - innerRingWidth/2
-        
+
         // If the style is different, mae the radius equal to the outerRadius
         if viewStyle >= 2 {
             radiusIn = (max(bounds.width, bounds.height)/2) - (outerRingWidth/2)
@@ -221,26 +260,30 @@ class UICircularProgressRingLayer: CAShapeLayer {
         innerRingColor.setStroke()
         innerPath.stroke()
     }
-    
+
     /**
      Draws the value label for the view.
      Only drawn if shouldShowValueText = true
      */
     private func drawValueLabel() {
         guard shouldShowValueText else { return }
-        
         // Draws the text field
         // Some basic label properties are set
         valueLabel.font = self.font
         valueLabel.textAlignment = .center
         valueLabel.textColor = fontColor
-        
-        valueLabel.update(withValue: value, valueIndicator: valueIndicator,
-                          showsDecimal: showFloatingPoint, decimalPlaces: decimalPlaces)
+        valueLabel.numberOfLines = 0
+        valueLabel.lineBreakMode = .byClipping
+        if token != nil {
+            valueLabel.update(withValue: value, tokenGenerated:token!, valueIndicator: valueIndicator,
+                              showsDecimal: showFloatingPoint, decimalPlaces: decimalPlaces)
+        } else {
+            valueLabel.update(withValue: value, valueIndicator: valueIndicator,
+                              showsDecimal: showFloatingPoint, decimalPlaces: decimalPlaces)
+        }
         
         // Deterime what should be the center for the label
         valueLabel.center = CGPoint(x: bounds.midX, y: bounds.midY)
-        
         valueLabel.drawText(in: self.bounds)
     }
 }
