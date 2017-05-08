@@ -37,36 +37,27 @@ private extension CGFloat {
  At the end sizeToFit() is called in order to ensure text gets drawn correctly
  */
 private extension UILabel {
+
     func update(withValue value: CGFloat, valueIndicator: String, showsDecimal: Bool, decimalPlaces: Int) {
         if showsDecimal {
             self.text = String(format: "%.\(decimalPlaces)f", value) + "\(valueIndicator)"
         } else {
-
-            let boldAttributes: [String : Any] = [
-                NSForegroundColorAttributeName: UIColor.black,
-                NSFontAttributeName : UIFont.boldSystemFont(ofSize: 20) ]
-            let normalAttributes: [String : Any] = [
-                NSForegroundColorAttributeName: UIColor.blue,
-                NSFontAttributeName : UIFont.boldSystemFont(ofSize: 13) ]
-
-            let boldText  = ""
-            let normalText = "\n \(Int(value))\(valueIndicator)"
-
-            let boldString = NSMutableAttributedString(string:boldText, attributes:boldAttributes)
-            let normalString = NSMutableAttributedString(string:normalText, attributes:normalAttributes)
-
-            boldString.append(normalString)
-            self.attributedText = boldString
-
+            self.text = "\(Int(value))\(valueIndicator)"
         }
         self.sizeToFit()
     }
 
+    //Etix version
     func update(withValue value: CGFloat, tokenGenerated:String, valueIndicator: String, showsDecimal: Bool, decimalPlaces: Int) {
+               self.setLabelTokenValue(withValue: value, tokenGenerated: tokenGenerated, valueIndicator: valueIndicator)
+        self.sizeToFit()
+    }
+
+    private func setLabelTokenValue(withValue value: CGFloat, tokenGenerated:String,valueIndicator: String){
 
         let boldAttributes: [String : Any] = [
             NSForegroundColorAttributeName: UIColor.black,
-            NSFontAttributeName : UIFont.boldSystemFont(ofSize: 20) ]
+            NSFontAttributeName : UIFont.boldSystemFont(ofSize: 30) ]
         let normalAttributes: [String : Any] = [
             NSForegroundColorAttributeName: UIColor.blue,
             NSFontAttributeName : UIFont.boldSystemFont(ofSize: 13) ]
@@ -79,8 +70,6 @@ private extension UILabel {
 
         boldString.append(normalString)
         self.attributedText = boldString
-
-        self.sizeToFit()
     }
 }
 
@@ -278,10 +267,10 @@ class UICircularProgressRingLayer: CAShapeLayer {
             valueLabel.update(withValue: value, tokenGenerated:token!, valueIndicator: valueIndicator,
                               showsDecimal: showFloatingPoint, decimalPlaces: decimalPlaces)
         } else {
-            valueLabel.update(withValue: value, valueIndicator: valueIndicator,
+            valueLabel.update(withValue: value, tokenGenerated:"", valueIndicator: valueIndicator,
                               showsDecimal: showFloatingPoint, decimalPlaces: decimalPlaces)
         }
-        
+
         // Deterime what should be the center for the label
         valueLabel.center = CGPoint(x: bounds.midX, y: bounds.midY)
         valueLabel.drawText(in: self.bounds)
