@@ -40,4 +40,6 @@ public protocol UICircularProgressRingDelegate: class {
      
     */
     func finishedUpdatingProgress(forRing ring: UICircularProgressRingView)
+    func didTapeLabel(forRing ring: UICircularProgressRingView)
+
 }

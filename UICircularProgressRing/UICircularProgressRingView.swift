@@ -630,6 +630,8 @@ import UIKit
      Luis Padron
      */
     open func setProgress(value: CGFloat, animationDuration: TimeInterval, completion: ProgressCompletion? = nil) {
+        let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(didTapeLabel))
+        self.ringLayer.valueLabel.addGestureRecognizer(longPressRecognizer)
         // Remove the current animation, so that new can be processed
         if isAnimating { self.layer.removeAnimation(forKey: "value") }
         // Only animate if duration sent is greater than zero
@@ -653,5 +655,8 @@ import UIKit
         self.ringLayer.token = tokenGenerated
         self.setProgress(value: value, animationDuration: animationDuration, completion: completion)
     }
-    
+
+    func didTapeLabel(sender: UILongPressGestureRecognizer) {
+        self.delegate?.didTapeLabel(forRing: self)
+    }
 }
